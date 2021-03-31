@@ -1,0 +1,20 @@
+
+
+# This text is inserted by `prisma init`:
+# Environment variables declared in this file are automatically made available to Prisma.
+# See the documentation for more detail: https://pris.ly/d/prisma-schema#using-environment-variables
+
+# Prisma supports the native connection string format for PostgreSQL, MySQL and SQLite.
+# See the documentation for all the connection string options: https://pris.ly/d/connection-strings
+
+DATABASE_URL="postgresql://username:password@localhost:5432/lagmart?schema=public"
+PORT=
+SENDGRID_API_KEY=
+VALIDATION_EMAIL_GREETING=Thanks for signing up attached to this application is your valitaion link. # replace
+VALIDATION_EMAIL_CONCLUSION=Thank for signing up. # replace
+EMAIL_SIGNOUT=Cheerio # replace
+BASE_API=http://localhost:5000 # fix
+FAILED_SIGNUP_REDIRECT=https://localhost:5000/failed # fix
+SUCCESS_SIGNUP_REDIRECT=https://localhost:5000/success # fix
+ACCESS_TOKEN_SECRET=private_dancer # replace
+REFRESH_TOKEN_SECRET=private_dancer # replace

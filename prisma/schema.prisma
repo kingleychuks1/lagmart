@@ -1,0 +1,252 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+// try to set up schema for the database
+model User {
+  id           String        @id @default(uuid())
+  first_name   String
+  last_name    String
+  email        String        @unique
+  password     String
+  role         Role          @default(USER)
+  created_at   DateTime      @default(now())
+  update_at    DateTime      @updatedAt
+  status       AccountStatus @default(PENDING)
+  auth         Auth[]
+  order_groups OrderGroup[]
+  ratings      Rating[]
+  redeemed     Redeem[]
+  comments     Comment[]
+  wishlists    Wishlist[]
+  products     Product[]
+  items        Item[]
+  cart         Cart[]
+  card_payment CardPayment[]
+}
+
+model UserValidation {
+  id    Int    @id @default(autoincrement())
+  email String @unique
+}
+
+model Auth {
+  id            Int    @id @default(autoincrement())
+  user          User   @relation(fields: [user_id], references: [id])
+  user_id       String
+  access_token  String
+  refresh_token String
+}
+
+model Wishlist {
+  id            Int     @id @default(autoincrement())
+  product       Product @relation(fields: [product_id], references: [id])
+  product_id    Int
+  wishlist_name String  @default("default")
+  user          User    @relation(fields: [user_id], references: [id])
+  user_id       String
+}
+
+model Category {
+  id             Int             @id @default(autoincrement())
+  category_name  String          @unique
+  category_group CategoryGroup[]
+}
+
+model Invoice {
+  id                    Int           @id @default(autoincrement())
+  payment_id            String        @default(uuid())
+  amount                Float
+  order                 Order         @relation(fields: [order_id], references: [id])
+  order_id              Int
+  payment_method        PaymentMethod
+  payment_status        PaymentStatus // his belongs to the vendor
+  vendor_payment_status PaymentStatus @default(dbgenerated("NOT_PAID"))
+}
+
+// add revenue and debt tracking
+model Order {
+  id             Int         @id @default(autoincrement())
+  order_group    OrderGroup  @relation(fields: [order_group_id], references: [id])
+  order_group_id Int
+  product        Product?    @relation(fields: [product_id], references: [id])
+  product_id     Int?
+  item           Item?       @relation(fields: [item_id], references: [id])
+  item_id        Int?
+  quantity       Int
+  status         OrderStatus @default(PENDING)
+  invoice        Invoice?
+}
+
+// prefer using this pattern in contrast to prisma many to many.
+// Leave it like this. It helps me map to SQL in my brain
+model OrderGroup {
+  id           Int      @id @default(autoincrement())
+  date         DateTime @default(now())
+  orders       Order[]
+  address      String
+  first_name   String
+  last_name    String
+  phone_number String
+  user         User     @relation(fields: [user_id], references: [id])
+  user_id      String
+}
+
+model Discount {
+  id            Int      @id @default(autoincrement())
+  discount_code String   @unique
+  discount_name String
+  percent       Float
+  created       DateTime @default(now())
+  ends          DateTime
+  redeemer      Redeem[]
+}
+
+model Redeem {
+  id          Int      @id @default(autoincrement())
+  user        User     @relation(fields: [user_id], references: [id])
+  user_id     String
+  discount    Discount @relation(fields: [discount_id], references: [id])
+  discount_id Int
+}
+
+model Cart {
+  id         Int          @id @default(autoincrement())
+  product    Product?     @relation(fields: [product_id], references: [id])
+  product_id Int?
+  item       Item?        @relation(fields: [item_id], references: [id])
+  item_id    Int?
+  quantity   Int
+  user       User         @relation(fields: [user_id], references: [id])
+  user_id    String
+}
+
+model Item {
+  id          Int         @id @default(autoincrement())
+  title       String
+  description String
+  price       Float
+  user        User        @relation(fields: [user_id], references: [id])
+  user_id     String
+  item_group  ItemGroup[]
+  cart        Cart[]
+  orders      Order[]
+  comments    Comment[]
+  ratings     Rating[]
+  is_deleted  Boolean     @default(false)
+}
+
+// prefer using this pattern in contrast to prisma many to many.
+// Leave it like this. It helps me map to SQL in my brain
+model ItemGroup {
+  id         Int     @id @default(autoincrement())
+  item       Item    @relation(fields: [item_id], references: [id])
+  item_id    Int
+  product    Product @relation(fields: [item_id], references: [id])
+  product_id Int
+}
+
+model Product {
+  id             Int             @id @default(autoincrement())
+  title          String
+  excerpt        String
+  description    String
+  price          Float
+  discount       Int             @default(0)
+  wishlist       Wishlist[]
+  cart           Cart[]
+  order          Order[]
+  comments       Comment[]
+  ratings        Rating[]
+  stock          Int
+  item_group     ItemGroup[]
+  user           User            @relation(fields: [user_id], references: [id])
+  user_id        String
+  created_at     DateTime        @default(now())
+  category_group CategoryGroup[]
+  is_deleted     Boolean         @default(false)
+}
+
+model CategoryGroup {
+  id          Int      @id @default(autoincrement())
+  category    Category @relation(fields: [category_id], references: [id])
+  category_id Int
+  product     Product  @relation(fields: [product_id], references: [id])
+  product_id  Int
+}
+
+model Rating {
+  id         Int     @id @default(autoincrement())
+  user       User    @relation(fields: [user_id], references: [id])
+  user_id    String
+  rating     Float
+  product    Product? @relation(fields: [product_id], references: [id])
+  product_id Int?
+  item       Item?    @relation(fields: [item_id], references: [id])
+  item_id    Int?
+}
+
+model Comment {
+  id         Int     @id @default(autoincrement())
+  user       User    @relation(fields: [user_id], references: [id])
+  user_id    String
+  product    Product @relation(fields: [product_id], references: [id])
+  product_id Int
+  item       Item    @relation(fields: [item_id], references: [id])
+  item_id    Int
+}
+
+model CardPayment {
+  id         Int    @id @default(autoincrement())
+  user       User   @relation(fields: [user_id], references: [id])
+  user_id    String
+  total      Float
+  cart_items Json
+}
+
+model Images {
+  id Int @id @default(autoincrement())
+}
+
+model ImagesGroup {
+  id Int @id @default(autoincrement())
+  // first_name
+}
+
+enum OrderStatus {
+  CANCELLED
+  PENDING
+  FUFILLED
+}
+
+enum PaymentStatus {
+  PAID
+  NOT_PAID
+}
+
+enum AccountStatus {
+  PENDING
+  DELETED
+  ACTIVE
+  INACTIVE
+}
+
+enum Role {
+  USER
+  SUPER
+  ADMIN
+  VENDOR
+}
+
+enum PaymentMethod {
+  CARD
+  CASH
+}
